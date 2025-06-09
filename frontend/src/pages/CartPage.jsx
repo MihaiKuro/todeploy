@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { motion } from "framer-motion";
@@ -6,12 +7,15 @@ import CartItem from "../components/CartItem";
 import PeopleAlsoBought from "../components/PeopleAlsoBought";
 import OrderSummary from "../components/OrderSummary";
 import GiftCouponCard from "../components/GiftCouponCard";
+import CheckoutModal from '../components/CheckoutModal';
+import toast from 'react-hot-toast';
 
 const CartPage = () => {
 	const { cart } = useCartStore();
+	const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
 	return (
-		<div className='py-8 md:py-16'>
+		<div className='py-8 md:py-16 bg-[#0B0F17]'>
 			<div className='mx-auto max-w-screen-xl px-4 2xl:px-0'>
 				<div className='mt-6 sm:mt-8 md:gap-6 lg:flex lg:items-start xl:gap-8'>
 					<motion.div
@@ -39,15 +43,21 @@ const CartPage = () => {
 							animate={{ opacity: 1, x: 0 }}
 							transition={{ duration: 0.5, delay: 0.4 }}
 						>
-							<OrderSummary />
+							<OrderSummary onProceedToCheckout={() => setIsCheckoutOpen(true)} />
 							<GiftCouponCard />
 						</motion.div>
 					)}
 				</div>
 			</div>
+
+			<CheckoutModal
+				isOpen={isCheckoutOpen}
+				onClose={() => setIsCheckoutOpen(false)}
+			/>
 		</div>
 	);
 };
+
 export default CartPage;
 
 const EmptyCartUI = () => (
@@ -61,7 +71,7 @@ const EmptyCartUI = () => (
 		<h3 className='text-2xl font-semibold '>Your cart is empty</h3>
 		<p className='text-gray-400'>Looks like you {"haven't"} added anything to your cart yet.</p>
 		<Link
-			className='mt-4 rounded-md bg-emerald-500 px-6 py-2 text-white transition-colors hover:bg-emerald-600'
+			className='mt-4 rounded-md bg-[#2B4EE6] px-6 py-2 text-white transition-colors hover:bg-blue-600'
 			to='/'
 		>
 			Start Shopping

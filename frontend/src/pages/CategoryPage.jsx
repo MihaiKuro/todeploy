@@ -1,76 +1,83 @@
 import { useEffect } from "react";
-import { useProductStore } from "../stores/useProductStore";
-import { useParams } from "react-router-dom";
+import { useCategoryStore } from "../stores/useCategoryStore";
+import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import ProductCard from "../components/ProductCard";
-
-const categorySlugToName = (slug) => {
-	const map = {
-		"evacuari-sport": "Evacuări Sport",
-		"suspensii-sport": "Suspensii Sport",
-		"frane-performanta": "Frâne Performanță",
-		"admisii-filtre-aer": "Admisii & Filtre Aer",
-		"jante-aliaj": "Jante Aliaj",
-		"kituri-caroserie": "Kituri Caroserie",
-		"volane-sport": "Volane Sport",
-		"scaune-sport": "Scaune Sport",
-		"piese-motor": "Componente Motor",
-		"sistem-franare": "Sistem Frânare",
-		"suspensie-directie": "Suspensie & Direcție",
-		"electrice-auto": "Electrice Auto",
-		"uleiuri-fluide": "Uleiuri & Fluide",
-		"accesorii-interior": "Accesorii Interior",
-		"accesorii-exterior": "Accesorii Exterior",
-		"intretinere-curatare": "Întreținere & Curățare",
-	};
-	return map[slug] || slug;
-};
 
 const CategoryPage = () => {
-	const { fetchProductsByCategory, products } = useProductStore();
-	const { category } = useParams();
+	const { categories, fetchCategories } = useCategoryStore();
+	const { category: categorySlug } = useParams();
 
 	useEffect(() => {
-		const realCategory = categorySlugToName(category);
-		fetchProductsByCategory(realCategory);
-	}, [fetchProductsByCategory, category]);
+		fetchCategories();
+	}, [fetchCategories]);
 
-	console.log("products:", products);
+	const currentCategory = categories.find(cat => cat.slug === categorySlug);
+	const categoryName = currentCategory?.name || "";
+	const subcategories = currentCategory?.subcategories || [];
+
 	return (
-		<div className='min-h-screen'>
-			<div className='relative z-10 max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-16'>
-				<motion.h1
-					className='text-center text-4xl sm:text-5xl font-bold text-emerald-400 mb-8'
-					initial={{ opacity: 0, y: -20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.8 }}
-				>
-					{category
-						? category
-							.split("-")
-							.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-							.join(" ")
-						: ""}
-				</motion.h1>
+		<div className='min-h-screen bg-[#0B0F17]'>
+			<div className='relative z-10 max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
+				<div className='text-center space-y-4 mb-12'>
+					<motion.h1
+						className='text-4xl sm:text-5xl font-bold text-[#2B4EE6]'
+						initial={{ opacity: 0, y: -20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5 }}
+					>
+						{categoryName}
+					</motion.h1>
+					<motion.p
+						className='text-gray-400 text-lg max-w-2xl mx-auto'
+						initial={{ opacity: 0, y: -10 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.2 }}
+					>
+						{categoryName && `Browse our collection of ${categoryName.toLowerCase()} by subcategory`}
+					</motion.p>
+				</div>
 
 				<motion.div
-					className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center'
+					className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.8, delay: 0.2 }}
+					transition={{ duration: 0.5, delay: 0.3 }}
 				>
-					{products?.length === 0 && (
-						<h2 className='text-3xl font-semibold text-gray-300 text-center col-span-full'>
-							No products found
-						</h2>
+					{subcategories.length === 0 ? (
+						<div className='col-span-full flex flex-col items-center justify-center py-16 px-4'>
+							<h2 className='text-2xl font-semibold text-gray-300 text-center mb-4'>
+								No subcategories found
+							</h2>
+							<p className='text-gray-400 text-center max-w-md'>
+								We couldn't find any subcategories in this category. Please check back later or explore other categories.
+							</p>
+						</div>
+					) : (
+						subcategories.map((subcategory) => (
+							<Link
+								key={subcategory._id}
+								to={`/category/${categorySlug}/${subcategory.slug}`}
+								className='group relative overflow-hidden rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300'
+							>
+								<div className='aspect-w-16 aspect-h-9'>
+									<img
+										src={subcategory.image || currentCategory.image}
+										alt={subcategory.name}
+										className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+									/>
+								</div>
+								<div className='absolute inset-0 bg-gradient-to-t from-black/80 to-transparent'></div>
+								<div className='absolute bottom-0 left-0 right-0 p-4'>
+									<h3 className='text-xl font-semibold text-white mb-1'>{subcategory.name}</h3>
+									<p className='text-sm text-gray-300'>Browse {subcategory.name}</p>
+								</div>
+							</Link>
+						))
 					)}
-
-					{products?.map((product) => (
-						<ProductCard key={product._id} product={product} />
-					))}
 				</motion.div>
 			</div>
 		</div>
 	);
 };
+
 export default CategoryPage;

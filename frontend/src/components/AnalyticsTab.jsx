@@ -31,7 +31,11 @@ const AnalyticsTab = () => {
 	}, []);
 
 	if (isLoading) {
-		return <div>Loading...</div>;
+		return (
+			<div className="flex justify-center items-center min-h-[400px] text-gray-400">
+				Loading analytics...
+			</div>
+		);
 	}
 
 	return (
@@ -41,46 +45,55 @@ const AnalyticsTab = () => {
 					title='Total Users'
 					value={analyticsData.users.toLocaleString()}
 					icon={Users}
-					color='from-emerald-500 to-teal-700'
+					color='from-[#2B4EE6] to-blue-900'
 				/>
 				<AnalyticsCard
 					title='Total Products'
 					value={analyticsData.products.toLocaleString()}
 					icon={Package}
-					color='from-emerald-500 to-green-700'
+					color='from-[#2B4EE6] to-indigo-900'
 				/>
 				<AnalyticsCard
 					title='Total Sales'
 					value={analyticsData.totalSales.toLocaleString()}
 					icon={ShoppingCart}
-					color='from-emerald-500 to-cyan-700'
+					color='from-[#2B4EE6] to-blue-900'
 				/>
 				<AnalyticsCard
 					title='Total Revenue'
 					value={`${analyticsData.totalRevenue.toLocaleString()} ron`}
 					icon={DollarSign}
-					color='from-emerald-500 to-lime-700'
+					color='from-[#2B4EE6] to-indigo-900'
 				/>
 			</div>
 			<motion.div
-				className='bg-gray-800/60 rounded-lg p-6 shadow-lg'
+				className='bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6 shadow-lg'
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5, delay: 0.25 }}
 			>
 				<ResponsiveContainer width='100%' height={400}>
 					<LineChart data={dailySalesData}>
-						<CartesianGrid strokeDasharray='3 3' />
-						<XAxis dataKey='name' stroke='#D1D5DB' />
-						<YAxis yAxisId='left' stroke='#D1D5DB' />
-						<YAxis yAxisId='right' orientation='right' stroke='#D1D5DB' />
-						<Tooltip />
+						<CartesianGrid strokeDasharray='3 3' stroke='#374151' />
+						<XAxis dataKey='name' stroke='#9CA3AF' />
+						<YAxis yAxisId='left' stroke='#9CA3AF' />
+						<YAxis yAxisId='right' orientation='right' stroke='#9CA3AF' />
+						<Tooltip 
+							contentStyle={{ 
+								backgroundColor: '#1F2937', 
+								border: '1px solid #374151',
+								borderRadius: '0.5rem'
+							}}
+							labelStyle={{ color: '#9CA3AF' }}
+							itemStyle={{ color: '#E5E7EB' }}
+						/>
 						<Legend />
 						<Line
 							yAxisId='left'
 							type='monotone'
 							dataKey='sales'
-							stroke='#10B981'
+							stroke='#2B4EE6'
+							strokeWidth={2}
 							activeDot={{ r: 8 }}
 							name='Sales'
 						/>
@@ -88,7 +101,8 @@ const AnalyticsTab = () => {
 							yAxisId='right'
 							type='monotone'
 							dataKey='revenue'
-							stroke='#3B82F6'
+							stroke='#60A5FA'
+							strokeWidth={2}
 							activeDot={{ r: 8 }}
 							name='Revenue'
 						/>
@@ -98,23 +112,24 @@ const AnalyticsTab = () => {
 		</div>
 	);
 };
+
 export default AnalyticsTab;
 
 const AnalyticsCard = ({ title, value, icon: Icon, color }) => (
 	<motion.div
-		className={`bg-gray-800 rounded-lg p-6 shadow-lg overflow-hidden relative ${color}`}
+		className='bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6 shadow-lg overflow-hidden relative'
 		initial={{ opacity: 0, y: 20 }}
 		animate={{ opacity: 1, y: 0 }}
 		transition={{ duration: 0.5 }}
 	>
 		<div className='flex justify-between items-center'>
 			<div className='z-10'>
-				<p className='text-emerald-300 text-sm mb-1 font-semibold'>{title}</p>
+				<p className='text-[#2B4EE6] text-sm mb-1 font-semibold'>{title}</p>
 				<h3 className='text-white text-3xl font-bold'>{value}</h3>
 			</div>
 		</div>
-		<div className='absolute inset-0 bg-gradient-to-br from-emerald-600 to-emerald-900 opacity-30' />
-		<div className='absolute -bottom-4 -right-4 text-emerald-800 opacity-50'>
+		<div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-10`} />
+		<div className='absolute -bottom-4 -right-4 text-[#2B4EE6] opacity-20'>
 			<Icon className='h-32 w-32' />
 		</div>
 	</motion.div>

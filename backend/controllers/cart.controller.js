@@ -61,6 +61,16 @@ export const updateQuantity = async (req, res) => {
 		const existingItem = user.cartItems.find((item) => item.id === productId);
 
 		if (existingItem) {
+			// Check product stock
+			const product = await Product.findById(productId);
+			if (!product) {
+				return res.status(404).json({ message: "Product not found" });
+			}
+
+			if (quantity > product.stock) {
+				return res.status(400).json({ message: `Only ${product.stock} items available in stock` });
+			}
+
 			if (quantity === 0) {
 				user.cartItems = user.cartItems.filter((item) => item.id !== productId);
 				await user.save();
@@ -71,7 +81,7 @@ export const updateQuantity = async (req, res) => {
 			await user.save();
 			res.json(user.cartItems);
 		} else {
-			res.status(404).json({ message: "Product not found" });
+			res.status(404).json({ message: "Product not found in cart" });
 		}
 	} catch (error) {
 		console.log("Error in updateQuantity controller", error.message);

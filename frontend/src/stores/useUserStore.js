@@ -70,6 +70,18 @@ export const useUserStore = create((set, get) => ({
 			throw error;
 		}
 	},
+
+	updateProfile: async (userData) => {
+		set({ loading: true });
+		try {
+			const response = await axios.put("/auth/profile", userData);
+			set({ user: response.data, loading: false });
+			return response.data;
+		} catch (error) {
+			set({ loading: false });
+			throw error;
+		}
+	},
 }));
 
 // TODO: Implement the axios interceptors for refreshing access token

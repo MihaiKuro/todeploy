@@ -4,44 +4,33 @@ import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "../lib/axios";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 const stripePromise = loadStripe(
 	"pk_test_51RRX4nRqG6J0ltnNnb7z43YF1w3QxkCgs1IyQThg31wXDZgTevtlHNmurVuhet6awNb2QFrqntptC271iVCApama00AzTtMut1"
 );
 
-const OrderSummary = () => {
+const OrderSummary = ({ onProceedToCheckout }) => {
 	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
+	const [isLoading, setIsLoading] = useState(false);
 
 	const savings = subtotal - total;
 	const formattedSubtotal = subtotal.toFixed(2);
 	const formattedTotal = total.toFixed(2);
 	const formattedSavings = savings.toFixed(2);
 
-	const handlePayment = async () => {
-		const stripe = await stripePromise;
-		const res = await axios.post("/payments/create-checkout-session", {
-			products: cart,
-			couponCode: coupon ? coupon.code : null,
-		});
-
-		const session = res.data;
-		const result = await stripe.redirectToCheckout({
-			sessionId: session.id,
-		});
-
-		if (result.error) {
-			console.error("Error:", result.error);
-		}
-	};
+	// The handlePayment function will be moved to the CheckoutModal or a later stage
+	// For now, the button will trigger onProceedToCheckout
 
 	return (
 		<motion.div
-			className='space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6'
+			className='space-y-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4 shadow-sm backdrop-blur-sm sm:p-6'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.5 }}
 		>
-			<p className='text-xl font-semibold text-emerald-400'>Order summary</p>
+			<p className='text-xl font-semibold text-[#2B4EE6]'>Order summary</p>
 
 			<div className='space-y-4'>
 				<div className='space-y-2'>
@@ -53,27 +42,28 @@ const OrderSummary = () => {
 					{savings > 0 && (
 						<dl className='flex items-center justify-between gap-4'>
 							<dt className='text-base font-normal text-gray-300'>Savings</dt>
-							<dd className='text-base font-medium text-emerald-400'>-{formattedSavings} ron</dd>
+							<dd className='text-base font-medium text-[#2B4EE6]'>-{formattedSavings} ron</dd>
 						</dl>
 					)}
 
 					{coupon && isCouponApplied && (
 						<dl className='flex items-center justify-between gap-4'>
 							<dt className='text-base font-normal text-gray-300'>Coupon ({coupon.code})</dt>
-							<dd className='text-base font-medium text-emerald-400'>-{coupon.discountPercentage}%</dd>
+							<dd className='text-base font-medium text-[#2B4EE6]'>-{coupon.discountPercentage}%</dd>
 						</dl>
 					)}
 					<dl className='flex items-center justify-between gap-4 border-t border-gray-600 pt-2'>
 						<dt className='text-base font-bold text-white'>Total</dt>
-						<dd className='text-base font-bold text-emerald-400'>{formattedTotal} ron</dd>
+						<dd className='text-base font-bold text-[#2B4EE6]'>{formattedTotal} ron</dd>
 					</dl>
 				</div>
 
 				<motion.button
-					className='flex w-full items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300'
-					whileHover={{ scale: 1.05 }}
-					whileTap={{ scale: 0.95 }}
-					onClick={handlePayment}
+					className='flex w-full items-center justify-center rounded-lg bg-[#2B4EE6] px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed'
+					whileHover={{ scale: isLoading ? 1 : 1.05 }}
+					whileTap={{ scale: isLoading ? 1 : 0.95 }}
+					onClick={onProceedToCheckout}
+					disabled={isLoading}
 				>
 					Proceed to Checkout
 				</motion.button>
@@ -82,7 +72,7 @@ const OrderSummary = () => {
 					<span className='text-sm font-normal text-gray-400'>or</span>
 					<Link
 						to='/'
-						className='inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline'
+						className='inline-flex items-center gap-2 text-sm font-medium text-[#2B4EE6] underline hover:text-blue-500 hover:no-underline'
 					>
 						Continue Shopping
 						<MoveRight size={16} />

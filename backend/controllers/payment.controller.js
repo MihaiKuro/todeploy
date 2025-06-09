@@ -2,19 +2,53 @@ import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import { stripe } from "../lib/stripe.js";
 
+// Default client URL if environment variable is not set
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
 export const createCheckoutSession = async (req, res) => {
 	try {
 		const { products, couponCode } = req.body;
+		console.log('Received request:', { products, couponCode });
+
+		// Validate Stripe configuration
+		if (!stripe) {
+			throw new Error('Stripe configuration is missing');
+		}
 
 		if (!Array.isArray(products) || products.length === 0) {
 			return res.status(400).json({ error: "Invalid or empty products array" });
 		}
 
+		// Validate products structure
+		const isValidProducts = products.every(product => 
+			product._id && 
+			typeof product.name === 'string' &&
+			typeof product.price === 'number' &&
+			typeof product.quantity === 'number' &&
+			product.image
+		);
+
+		if (!isValidProducts) {
+			return res.status(400).json({ 
+				error: "Invalid product data structure",
+				receivedProducts: products
+			});
+		}
+
 		let totalAmount = 0;
 
+		console.log('Creating line items...');
 		const lineItems = products.map((product) => {
-			const amount = product.price ; 
+			// Convert price to cents for Stripe
+			const amount = Math.round(product.price * 100);
 			totalAmount += amount * product.quantity;
+
+			console.log('Processing product:', {
+				name: product.name,
+				price: product.price,
+				amount_in_cents: amount,
+				quantity: product.quantity
+			});
 
 			return {
 				price_data: {
@@ -29,27 +63,47 @@ export const createCheckoutSession = async (req, res) => {
 			};
 		});
 
-		let coupon = null;
+		let discountId = null;
 		if (couponCode) {
-			coupon = await Coupon.findOne({ code: couponCode, userId: req.user._id, isActive: true });
+			console.log('Processing coupon:', couponCode);
+			const coupon = await Coupon.findOne({ 
+				code: couponCode, 
+				userId: req.user._id, 
+				isActive: true 
+			});
+			
 			if (coupon) {
-				totalAmount -= Math.round((totalAmount * coupon.discountPercentage) / 100);
+				console.log('Found valid coupon:', coupon);
+				try {
+					// Create a Stripe coupon
+					const stripeCoupon = await stripe.coupons.create({
+						percent_off: coupon.discountPercentage,
+						duration: 'once',
+					});
+					discountId = stripeCoupon.id;
+					console.log('Created Stripe coupon:', stripeCoupon.id);
+					
+					// Apply discount to total
+					totalAmount = Math.round(totalAmount * (1 - coupon.discountPercentage / 100));
+				} catch (couponError) {
+					console.error('Error creating Stripe coupon:', couponError);
+					// Continue without applying coupon if there's an error
+				}
 			}
 		}
+
+		console.log('Creating Stripe session with URLs:', {
+			success_url: `${CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${CLIENT_URL}/purchase-cancel`
+		});
 
 		const session = await stripe.checkout.sessions.create({
 			payment_method_types: ["card"],
 			line_items: lineItems,
 			mode: "payment",
-			success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${process.env.CLIENT_URL}/purchase-cancel`,
-			discounts: coupon
-				? [
-						{
-							coupon: await createStripeCoupon(coupon.discountPercentage),
-						},
-				  ]
-				: [],
+			success_url: `${CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${CLIENT_URL}/purchase-cancel`,
+			discounts: discountId ? [{ coupon: discountId }] : [],
 			metadata: {
 				userId: req.user._id.toString(),
 				couponCode: couponCode || "",
@@ -63,13 +117,24 @@ export const createCheckoutSession = async (req, res) => {
 			},
 		});
 
+		console.log('Stripe session created:', session.id);
+
 		if (totalAmount >= 20000) {
 			await createNewCoupon(req.user._id);
 		}
-		res.status(200).json({ id: session.id, totalAmount: totalAmount / 100 });
+		res.status(200).json({ id: session.id, totalAmount });
 	} catch (error) {
-		console.error("Error processing checkout:", error);
-		res.status(500).json({ message: "Error processing checkout", error: error.message });
+		console.error("Error processing checkout:", {
+			error: error.message,
+			stack: error.stack,
+			products: req.body.products,
+			user: req.user?._id
+		});
+		res.status(500).json({ 
+			message: "Error processing checkout", 
+			error: error.message,
+			details: error.stack 
+		});
 	}
 };
 

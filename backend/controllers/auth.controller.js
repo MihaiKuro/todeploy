@@ -1,6 +1,7 @@
 import { redis } from "../lib/redis.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const generateTokens = (userId) => {
 	const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -20,28 +21,28 @@ const storeRefreshToken = async (userId, refreshToken) => {
 
 const setCookies = (res, accessToken, refreshToken) => {
 	res.cookie("accessToken", accessToken, {
-		httpOnly: true, // prevent XSS attacks, cross site scripting attack
+		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
-		sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
-		maxAge: 15 * 60 * 1000, // 15 minutes
+		sameSite: "strict",
+		maxAge: 15 * 60 * 1000,
 	});
 	res.cookie("refreshToken", refreshToken, {
-		httpOnly: true, // prevent XSS attacks, cross site scripting attack
+		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
-		sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
-		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+		sameSite: "strict",
+		maxAge: 7 * 24 * 60 * 60 * 1000,
 	});
 };
 
 export const signup = async (req, res) => {
-	const { email, password, name } = req.body;
+	const { email, password, firstName, lastName } = req.body;
 	try {
 		const userExists = await User.findOne({ email });
 
 		if (userExists) {
 			return res.status(400).json({ message: "User already exists" });
 		}
-		const user = await User.create({ name, email, password });
+		const user = await User.create({ firstName, lastName, email, password });
 
 		// authenticate
 		const { accessToken, refreshToken } = generateTokens(user._id);
@@ -49,12 +50,18 @@ export const signup = async (req, res) => {
 
 		setCookies(res, accessToken, refreshToken);
 
-		res.status(201).json({
+		const userResponse = {
 			_id: user._id,
-			name: user.name,
+			firstName: user.firstName,
+			lastName: user.lastName,
 			email: user.email,
 			role: user.role,
-		});
+			phone: user.phone,
+			addresses: user.addresses,
+			cartItems: user.cartItems
+		};
+
+		res.status(201).json(userResponse);
 	} catch (error) {
 		console.log("Error in signup controller", error.message);
 		res.status(500).json({ message: error.message });
@@ -71,12 +78,18 @@ export const login = async (req, res) => {
 			await storeRefreshToken(user._id, refreshToken);
 			setCookies(res, accessToken, refreshToken);
 
-			res.json({
+			const userResponse = {
 				_id: user._id,
-				name: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				email: user.email,
 				role: user.role,
-			});
+				phone: user.phone,
+				addresses: user.addresses,
+				cartItems: user.cartItems
+			};
+
+			res.json(userResponse);
 		} else {
 			res.status(400).json({ message: "Invalid email or password" });
 		}
@@ -137,8 +150,67 @@ export const refreshToken = async (req, res) => {
 
 export const getProfile = async (req, res) => {
 	try {
-		res.json(req.user);
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		const userResponse = {
+			_id: user._id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			role: user.role,
+			phone: user.phone,
+			addresses: user.addresses,
+			cartItems: user.cartItems
+		};
+
+		res.json(userResponse);
 	} catch (error) {
+		console.error("Error in getProfile:", error);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const updateProfile = async (req, res) => {
+	try {
+		const { firstName, lastName, email, phone, addresses, currentPassword, newPassword } = req.body;
+		const user = await User.findById(req.user._id);
+
+		// Update basic info
+		if (firstName) user.firstName = firstName;
+		if (lastName) user.lastName = lastName;
+		if (email) user.email = email;
+		if (phone !== undefined) user.phone = phone;
+		// Assuming addresses are handled by a separate route or updated via specific logic
+		// if (addresses) user.addresses = addresses;
+
+		// Update password if provided
+		if (currentPassword && newPassword) {
+			const isMatch = await bcrypt.compare(currentPassword, user.password);
+			if (!isMatch) {
+				return res.status(400).json({ message: "Current password is incorrect" });
+			}
+			user.password = await bcrypt.hash(newPassword, 10);
+		}
+
+		await user.save();
+		
+		// Return updated user without password
+		const userResponse = {
+			_id: user._id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			role: user.role,
+			phone: user.phone,
+			addresses: user.addresses,
+			cartItems: user.cartItems
+		};
+		res.json(userResponse);
+	} catch (error) {
+		console.error("Error in updateProfile:", error);
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };

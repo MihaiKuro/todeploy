@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
 			ref: "User",
 			required: true,
 		},
-		products: [
+		orderItems: [
 			{
 				product: {
 					type: mongoose.Schema.Types.ObjectId,
@@ -19,21 +19,47 @@ const orderSchema = new mongoose.Schema(
 					required: true,
 					min: 1,
 				},
-				price: {
-					type: Number,
-					required: true,
-					min: 0,
-				},
 			},
 		],
-		totalAmount: {
+		totalPrice: {
 			type: Number,
 			required: true,
 			min: 0,
 		},
-		stripeSessionId: {
+		shippingAddress: {
+			street: { type: String, required: true },
+			city: { type: String, required: true },
+			postalCode: { type: String, required: true },
+			country: { type: String, required: true },
+		},
+		status: {
 			type: String,
-			unique: true,
+			enum: ["Pending", "Shipped", "Delivered", "Cancelled"],
+			default: "Pending",
+		},
+		paymentMethod: {
+			type: String,
+			required: true,
+		},
+		paymentResult: {
+			id: { type: String },
+			status: { type: String },
+			update_time: { type: String },
+			email_address: { type: String },
+		},
+		isPaid: {
+			type: Boolean,
+			default: false,
+		},
+		paidAt: {
+			type: Date,
+		},
+		isDelivered: {
+			type: Boolean,
+			default: false,
+		},
+		deliveredAt: {
+			type: Date,
 		},
 	},
 	{ timestamps: true }

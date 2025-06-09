@@ -5,8 +5,16 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
+import SubcategoryPage from "./pages/SubcategoryPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import ProfileLayout from "./components/ProfileLayout";
+import ProfileDashboardPage from "./pages/ProfileDashboardPage";
+import ProfileDetailsPage from "./pages/ProfileDetailsPage";
+import ProfileAddressesPage from "./pages/ProfileAddressesPage";
+import ProfileOrdersPage from "./pages/ProfileOrdersPage";
 
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
 import { useUserStore } from "./stores/useUserStore";
 import { useEffect } from "react";
@@ -32,32 +40,50 @@ function App() {
 	if (checkingAuth) return <LoadingSpinner />;
 
 	return (
-		<div className='min-h-screen bg-purple-950 text-white relative overflow-hidden'>
-			{/* Background gradient */}
-			<div className='absolute inset-0 overflow-hidden'>
-				<div className='absolute inset-0'>
-					<div className='absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(91,33,182,0.5)_0%,_rgba(59,7,100,0.8)_60%,_rgba(24,0,36,1)_100%)]' />
+		<div className='min-h-screen flex flex-col bg-[#0B0F17] text-white'>
+			{/* Navigation background */}
+			<div className='absolute top-0 left-0 right-0 h-32 bg-[#2B4EE6] z-0' />
+
+			{/* Main content */}
+			<div className='relative z-10'>
+				<Navbar />
+				<div className='pt-20'>
+					<Routes>
+						<Route path='/' element={<HomePage />} />
+						<Route path='/categories' element={<CategoriesPage />} />
+						<Route path='/signup' element={!user ? <SignUpPage /> : <Navigate to='/' />} />
+						<Route path='/login' element={!user ? <LoginPage /> : <Navigate to='/' />} />
+						
+						{/* Profile Routes */}
+						<Route path="/profile" element={user ? <ProfileLayout /> : <Navigate to="/login" />}>
+							<Route index element={<ProfileDashboardPage />} />
+							<Route path="details" element={<ProfileDetailsPage />} />
+							<Route path="addresses" element={<ProfileAddressesPage />} />
+							<Route path="orders" element={<ProfileOrdersPage />} />
+							<Route path="vehicles" element={<div>Vehiculele Mele</div>} />
+							<Route path="appointments" element={<div>Programări Service</div>} />
+							<Route path="wishlist" element={<div>Favorite</div>} />
+						</Route>
+
+						<Route
+							path='/secret-dashboard'
+							element={user?.role === "admin" ? <AdminPage /> : <Navigate to='/login' />}
+						/>
+						<Route path='/category/:category' element={<CategoryPage />} />
+						<Route path='/category/:category/:subcategory' element={<SubcategoryPage />} />
+						<Route path='/cart' element={user ? <CartPage /> : <Navigate to='/login' />} />
+						<Route
+							path='/purchase-success'
+							element={user ? <PurchaseSuccessPage /> : <Navigate to='/login' />}
+						/>
+						<Route path='/purchase-cancel' element={user ? <PurchaseCancelPage /> : <Navigate to='/login' />} />
+					</Routes>
 				</div>
 			</div>
 
-			<div className='relative z-50 pt-20'>
-				<Navbar />
-				<Routes>
-					<Route path='/' element={<HomePage />} />
-					<Route path='/signup' element={!user ? <SignUpPage /> : <Navigate to='/' />} />
-					<Route path='/login' element={!user ? <LoginPage /> : <Navigate to='/' />} />
-					<Route
-						path='/secret-dashboard'
-						element={user?.role === "admin" ? <AdminPage /> : <Navigate to='/login' />}
-					/>
-					<Route path='/category/:category' element={<CategoryPage />} />
-					<Route path='/cart' element={user ? <CartPage /> : <Navigate to='/login' />} />
-					<Route
-						path='/purchase-success'
-						element={user ? <PurchaseSuccessPage /> : <Navigate to='/login' />}
-					/>
-					<Route path='/purchase-cancel' element={user ? <PurchaseCancelPage /> : <Navigate to='/login' />} />
-				</Routes>
+			{/* Footer */}
+			<div className='mt-auto'>
+				<Footer />
 			</div>
 			<Toaster />
 		</div>

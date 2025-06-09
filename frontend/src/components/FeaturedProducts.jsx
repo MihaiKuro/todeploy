@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
+import { Link } from "react-router-dom";
 
 const FeaturedProducts = ({ featuredProducts }) => {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [itemsPerPage, setItemsPerPage] = useState(4);
-
 	const { addToCart } = useCartStore();
 
 	useEffect(() => {
@@ -22,77 +22,118 @@ const FeaturedProducts = ({ featuredProducts }) => {
 	}, []);
 
 	const nextSlide = () => {
-		setCurrentIndex((prevIndex) => prevIndex + itemsPerPage);
+		setCurrentIndex((prevIndex) => 
+			prevIndex + itemsPerPage >= featuredProducts.length ? 0 : prevIndex + itemsPerPage
+		);
 	};
 
 	const prevSlide = () => {
-		setCurrentIndex((prevIndex) => prevIndex - itemsPerPage);
+		setCurrentIndex((prevIndex) => 
+			prevIndex === 0 ? Math.max(0, featuredProducts.length - itemsPerPage) : prevIndex - itemsPerPage
+		);
 	};
 
-	const isStartDisabled = currentIndex === 0;
-	const isEndDisabled = currentIndex >= featuredProducts.length - itemsPerPage;
+	const renderStars = (rating) => {
+		return [...Array(5)].map((_, index) => (
+			<Star
+				key={index}
+				size={16}
+				className={`${
+					index < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'
+				}`}
+			/>
+		));
+	};
 
 	return (
-		<div className='py-12'>
-			<div className='container mx-auto px-4'>
-				<h2 className='text-center text-5xl sm:text-6xl font-bold text-emerald-400 mb-4'>Featured</h2>
-				<div className='relative'>
-					<div className='overflow-hidden'>
-						<div
-							className='flex transition-transform duration-300 ease-in-out'
-							style={{ transform: `translateX(-${currentIndex * (100 / itemsPerPage)}%)` }}
+		<div className='py-16 bg-gray-900'>
+			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+				<div className='flex justify-between items-center mb-8'>
+					<h2 className='text-2xl font-bold text-white'>Featured Products</h2>
+					<div className='flex gap-2'>
+						<button
+							onClick={prevSlide}
+							className='p-2 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors'
+							aria-label="Previous products"
 						>
-							{featuredProducts?.map((product) => (
-								<div key={product._id} className='w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 flex-shrink-0 px-2'>
-									<div className='bg-white bg-opacity-10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-full transition-all duration-300 hover:shadow-xl border border-emerald-500/30'>
-										<div className='overflow-hidden'>
-											<img
-												src={product.image}
-												alt={product.name}
-												className='w-full h-48 object-cover transition-transform duration-300 ease-in-out hover:scale-110'
-											/>
-										</div>
-										<div className='p-4'>
-											<h3 className='text-lg font-semibold mb-2 text-white'>{product.name}</h3>
-											<p className='text-emerald-300 font-medium mb-4'>
-												${product.price.toFixed(2)}
-											</p>
-											<button
-												onClick={() => addToCart(product)}
-												className='w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-4 rounded transition-colors duration-300 
-												flex items-center justify-center'
-											>
-												<ShoppingCart className='w-5 h-5 mr-2' />
-												Add to Cart
-											</button>
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
+							<ChevronLeft size={24} />
+						</button>
+						<button
+							onClick={nextSlide}
+							className='p-2 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors'
+							aria-label="Next products"
+						>
+							<ChevronRight size={24} />
+						</button>
 					</div>
-					<button
-						onClick={prevSlide}
-						disabled={isStartDisabled}
-						className={`absolute top-1/2 -left-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isStartDisabled ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500"
-						}`}
-					>
-						<ChevronLeft className='w-6 h-6' />
-					</button>
+				</div>
 
-					<button
-						onClick={nextSlide}
-						disabled={isEndDisabled}
-						className={`absolute top-1/2 -right-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isEndDisabled ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500"
-						}`}
+				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+					{featuredProducts
+						.slice(currentIndex, currentIndex + itemsPerPage)
+						.map((product) => (
+							<div
+								key={product.id}
+								className='bg-gray-800 rounded-lg overflow-hidden group'
+							>
+								<div className='relative aspect-w-16 aspect-h-9'>
+									<img
+										src={product.image}
+										alt={product.name}
+										className='w-full h-full object-cover'
+									/>
+									{product.onSale && (
+										<span className='absolute top-2 left-2 bg-red-500 text-white text-sm font-semibold px-2 py-1 rounded'>
+											SALE
+										</span>
+									)}
+								</div>
+								<div className='p-4'>
+									<Link 
+										to={`/product/${product.id}`}
+										className='text-lg font-semibold text-white hover:text-blue-400 transition-colors line-clamp-2'
+									>
+										{product.name}
+									</Link>
+									<div className='flex items-center gap-1 my-2'>
+										{renderStars(product.rating)}
+										<span className='text-gray-400 text-sm ml-1'>
+											({product.reviewCount})
+										</span>
+									</div>
+									<div className='flex items-baseline gap-2 mb-4'>
+										<span className='text-xl font-bold text-white'>
+											${product.price.toFixed(2)}
+										</span>
+										{product.originalPrice && (
+											<span className='text-gray-400 line-through text-sm'>
+												${product.originalPrice.toFixed(2)}
+											</span>
+										)}
+									</div>
+									<button
+										onClick={() => addToCart(product)}
+										className='w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors'
+									>
+										<ShoppingCart size={20} />
+										Add to Cart
+									</button>
+								</div>
+							</div>
+						))}
+				</div>
+
+				<div className='text-center mt-8'>
+					<Link
+						to='/products'
+						className='inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors'
 					>
-						<ChevronRight className='w-6 h-6' />
-					</button>
+						View All Products
+					</Link>
 				</div>
 			</div>
 		</div>
 	);
 };
+
 export default FeaturedProducts;

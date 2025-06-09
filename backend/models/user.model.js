@@ -1,11 +1,42 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const addressSchema = new mongoose.Schema({
+	title: {
+		type: String,
+		required: [true, "Address title is required"],
+	},
+	street: {
+		type: String,
+		required: [true, "Street is required"],
+	},
+	city: {
+		type: String,
+		required: [true, "City is required"],
+	},
+	county: {
+		type: String,
+		required: [true, "County is required"],
+	},
+	postalCode: {
+		type: String,
+		required: [true, "Postal code is required"],
+	},
+	isDefault: {
+		type: Boolean,
+		default: false,
+	}
+});
+
 const userSchema = new mongoose.Schema(
 	{
-		name: {
+		firstName: {
 			type: String,
-			required: [true, "Name is required"],
+			required: [true, "First name is required"],
+		},
+		lastName: {
+			type: String,
+			required: [true, "Last name is required"],
 		},
 		email: {
 			type: String,
@@ -14,6 +45,11 @@ const userSchema = new mongoose.Schema(
 			lowercase: true,
 			trim: true,
 		},
+		phone: {
+			type: String,
+			trim: true,
+		},
+		addresses: [addressSchema],
 		password: {
 			type: String,
 			required: [true, "Password is required"],
