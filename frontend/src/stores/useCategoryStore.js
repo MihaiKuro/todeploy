@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import axios from "../lib/axios";
+import { toast } from "react-hot-toast";
 
 export const useCategoryStore = create((set) => ({
 	categories: [],
@@ -7,12 +8,16 @@ export const useCategoryStore = create((set) => ({
 	error: null,
 
 	fetchCategories: async () => {
-		set({ loading: true });
+		set({ loading: true, error: null });
 		try {
 			const response = await axios.get("/categories");
 			set({ categories: response.data, error: null });
 		} catch (error) {
-			set({ error: error.response?.data?.message || "Failed to fetch categories" });
+			const errorMessage = error.response?.data?.message || "Failed to fetch categories";
+			const errorDetails = error.response?.data?.error || error.message;
+			console.error("Error fetching categories:", errorDetails);
+			set({ error: errorMessage });
+			toast.error(errorMessage);
 		} finally {
 			set({ loading: false });
 		}

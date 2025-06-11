@@ -8,7 +8,26 @@ export const getAllCategories = async (req, res) => {
 		res.status(200).json(categories);
 	} catch (error) {
 		console.error("Error in getAllCategories:", error);
-		res.status(500).json({ message: "Server error", error: error.message });
+		// Check if it's a MongoDB connection error
+		if (error.name === 'MongoServerError') {
+			return res.status(500).json({ 
+				message: "Database connection error", 
+				error: error.message 
+			});
+		}
+		// Check if it's a Cloudinary error
+		if (error.name === 'CloudinaryError') {
+			return res.status(500).json({ 
+				message: "Image service error", 
+				error: error.message 
+			});
+		}
+		// Generic error
+		res.status(500).json({ 
+			message: "Server error", 
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 	}
 };
 

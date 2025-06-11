@@ -20,8 +20,14 @@ const productSchema = new mongoose.Schema(
 			required: [true, "Image is required"],
 		},
 		category: {
-			type: String,
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Category',
 			required: true,
+		},
+		subcategory: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Category.subcategories',
+			required: false,
 		},
 		stock: {
 			type: Number,

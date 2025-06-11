@@ -231,3 +231,31 @@ async function updateFeaturedProductsCache() {
 		console.log("error in update cache function");
 	}
 }
+
+// Get a single product by ID
+export const getProductById = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const product = await Product.findById(id)
+			.populate({
+				path: 'category',
+				select: 'name slug'
+			})
+			.populate({
+				path: 'subcategory',
+				select: 'name slug'
+			});
+
+		if (!product) {
+			return res.status(404).json({ message: "Product not found" });
+		}
+
+		res.status(200).json(product);
+	} catch (error) {
+		console.error("Error in getProductById:", error);
+		if (error.name === 'CastError') {
+			return res.status(400).json({ message: "Invalid product ID" });
+		}
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};

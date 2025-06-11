@@ -73,7 +73,7 @@ const FeaturedProducts = ({ featuredProducts }) => {
 						.slice(currentIndex, currentIndex + itemsPerPage)
 						.map((product) => (
 							<div
-								key={product.id}
+								key={product._id}
 								className='bg-gray-800 rounded-lg overflow-hidden group'
 							>
 								<div className='relative aspect-w-16 aspect-h-9'>
@@ -90,7 +90,7 @@ const FeaturedProducts = ({ featuredProducts }) => {
 								</div>
 								<div className='p-4'>
 									<Link 
-										to={`/product/${product.id}`}
+										to={`/product/${product._id}`}
 										className='text-lg font-semibold text-white hover:text-blue-400 transition-colors line-clamp-2'
 									>
 										{product.name}

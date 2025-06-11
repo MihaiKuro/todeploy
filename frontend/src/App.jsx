@@ -7,6 +7,7 @@ import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
 import SubcategoryPage from "./pages/SubcategoryPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import ProfileLayout from "./components/ProfileLayout";
 import ProfileDashboardPage from "./pages/ProfileDashboardPage";
 import ProfileDetailsPage from "./pages/ProfileDetailsPage";
@@ -53,6 +54,7 @@ function App() {
 						<Route path='/categories' element={<CategoriesPage />} />
 						<Route path='/signup' element={!user ? <SignUpPage /> : <Navigate to='/' />} />
 						<Route path='/login' element={!user ? <LoginPage /> : <Navigate to='/' />} />
+						<Route path='/product/:id' element={<ProductDetailPage />} />
 						
 						{/* Profile Routes */}
 						<Route path="/profile" element={user ? <ProfileLayout /> : <Navigate to="/login" />}>

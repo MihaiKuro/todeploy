@@ -2,6 +2,47 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
+// Axios interceptor for token refresh
+let refreshPromise = null;
+
+const setupAxiosInterceptors = () => {
+	axios.interceptors.response.use(
+		(response) => response,
+		async (error) => {
+			const originalRequest = error.config;
+			
+			// Only attempt to refresh token if it's a 401 error and we haven't tried to refresh yet
+			if (error.response?.status === 401 && !originalRequest._retry) {
+				originalRequest._retry = true;
+
+				try {
+					// If a refresh is already in progress, wait for it to complete
+					if (refreshPromise) {
+						await refreshPromise;
+						return axios(originalRequest);
+					}
+
+					// Start a new refresh process
+					refreshPromise = useUserStore.getState().refreshToken();
+					await refreshPromise;
+					refreshPromise = null;
+
+					// Retry the original request
+					return axios(originalRequest);
+				} catch (refreshError) {
+					// If refresh fails, clear user state and reject
+					useUserStore.getState().logout();
+					return Promise.reject(refreshError);
+				}
+			}
+			return Promise.reject(error);
+		}
+	);
+};
+
+// Initialize the interceptors
+setupAxiosInterceptors();
+
 export const useUserStore = create((set, get) => ({
 	user: null,
 	loading: false,
@@ -83,38 +124,3 @@ export const useUserStore = create((set, get) => ({
 		}
 	},
 }));
-
-// TODO: Implement the axios interceptors for refreshing access token
-
-// Axios interceptor for token refresh
-let refreshPromise = null;
-
-axios.interceptors.response.use(
-	(response) => response,
-	async (error) => {
-		const originalRequest = error.config;
-		if (error.response?.status === 401 && !originalRequest._retry) {
-			originalRequest._retry = true;
-
-			try {
-				// If a refresh is already in progress, wait for it to complete
-				if (refreshPromise) {
-					await refreshPromise;
-					return axios(originalRequest);
-				}
-
-				// Start a new refresh process
-				refreshPromise = useUserStore.getState().refreshToken();
-				await refreshPromise;
-				refreshPromise = null;
-
-				return axios(originalRequest);
-			} catch (refreshError) {
-				// If refresh fails, redirect to login or handle as needed
-				useUserStore.getState().logout();
-				return Promise.reject(refreshError);
-			}
-		}
-		return Promise.reject(error);
-	}
-);
